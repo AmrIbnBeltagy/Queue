@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree Management - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="components/global-header.js"></script></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+    
+
+    <!-- Main Content -->
+    <div class="container">
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-table"></i> Degree Management</h1>
+                <p>Manage system degrees</p>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalDegrees">0</h3>
+                    <p>Total Degrees</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeDegrees">0</h3>
+                    <p>Active Degrees</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon disabled">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="disabledDegrees">0</h3>
+                    <p>Disabled Degrees</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="filter-group">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-container">
+            <button class="btn btn-primary" id="addDegreeBtn">
+                <i class="fas fa-plus"></i> Add New Degree
+            </button>
+        </div>
+
+        <!-- Degrees Table -->
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th data-sort="0">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>Arabic Name</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="1">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>English Name</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="2">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Status</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="3">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Created</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Disable Reason</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="degreesTableBody">
+                    <!-- Degrees will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button class="btn btn-secondary" id="prevBtn">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="btn btn-secondary" id="nextBtn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Degree Modal -->
+    <div id="addDegreeModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-graduation-cap"></i> Add New Degree</h2>
+                <span class="close" id="closeAddDegreeModal">&times;</span>
+            </div>
+            <form id="addDegreeForm">
+                <div class="modal-body">
+                    <div class="detail-section">
+                        <h3><i class="fas fa-language"></i> Degree Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="arName"><i class="fas fa-language"></i> Arabic Name *</label>
+                            <input type="text" id="arName" name="arName" required placeholder="e.g., دكتور في الطب">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="enName"><i class="fas fa-language"></i> English Name *</label>
+                            <input type="text" id="enName" name="enName" required placeholder="e.g., Doctor of Medicine">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAddDegreeBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Degree
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Degree Modal -->
+    <div id="editDegreeModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Degree</h2>
+                <span class="close" id="closeEditDegreeModal">&times;</span>
+            </div>
+            <form id="editDegreeForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editDegreeId" name="id">
+                    
+                    <div class="detail-section">
+                        <h3><i class="fas fa-language"></i> Degree Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="editArName"><i class="fas fa-language"></i> Arabic Name *</label>
+                            <input type="text" id="editArName" name="arName" required placeholder="e.g., دكتور في الطب">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editEnName"><i class="fas fa-language"></i> English Name *</label>
+                            <input type="text" id="editEnName" name="enName" required placeholder="e.g., Doctor of Medicine">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelEditDegreeBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Degree
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Disable Degree Modal -->
+    <div id="disableDegreeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-ban"></i> Disable Degree</h2>
+                <span class="close" id="closeDisableDegreeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="disableDegreeForm">
+                    <input type="hidden" id="disableDegreeId" name="id">
+                    
+                    <div class="form-group">
+                        <label for="disableReason">Reason for Disabling *</label>
+                        <textarea id="disableReason" name="reason" rows="4" required placeholder="Please provide a reason for disabling this degree..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="disabledBy">Disabled By *</label>
+                        <input type="text" id="disabledBy" name="disabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelDisableDegreeBtn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-ban"></i> Disable Degree
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enable Degree Modal -->
+    <div id="enableDegreeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-check-circle"></i> Enable Degree</h2>
+                <span class="close" id="closeEnableDegreeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="enableDegreeForm">
+                    <input type="hidden" id="enableDegreeId" name="id">
+                    
+                    <div class="form-group">
+                        <label for="enabledBy">Enabled By *</label>
+                        <input type="text" id="enabledBy" name="enabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelEnableDegreeBtn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Enable Degree
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="degrees.js"></script>
+</body>
+</html>

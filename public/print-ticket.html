@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Ticket - Queue Management System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+        
+        /* Print-specific styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-ticket {
+                border: 2px solid #000;
+                padding: 20px;
+                margin: 10px;
+                font-family: 'Courier New', monospace;
+                background: white;
+            }
+            
+            .ticket-header {
+                text-align: center;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .ticket-content {
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            
+            .ticket-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                border-bottom: 1px dotted #ccc;
+                padding-bottom: 4px;
+            }
+            
+            .ticket-label {
+                font-weight: bold;
+                min-width: 120px;
+            }
+            
+            .ticket-value {
+                flex: 1;
+                text-align: right;
+            }
+            
+            .ticket-footer {
+                text-align: center;
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 2px solid #000;
+                font-size: 12px;
+            }
+        }
+        
+        .ticket-preview {
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9f9f9;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            display: none;
+        }
+        
+        .ticket-preview.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <div id="global-header-container"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-print"></i> Print Ticket</h1>
+                <p>Print tickets for today's physician schedules</p>
+                <div class="today-date" style="background: #e3f2fd; padding: 8px 16px; border-radius: 20px; display: inline-block; margin-top: 10px; color: #1976d2;">
+                    <i class="fas fa-calendar"></i>
+                    <span id="todayDate"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalPhysicians">0</h3>
+                    <p>Total Physicians</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeSchedules">0</h3>
+                    <p>Active Schedules</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="todaySchedules">0</h3>
+                    <p>Today's Schedules</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-print"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="printableTickets">0</h3>
+                    <p>Printable Tickets</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search physicians, specialties, or degrees...">
+            </div>
+            <div class="filter-group">
+                <select id="specialtyFilter">
+                    <option value="">All Specialties</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="clinicFilter">
+                    <option value="">All Clinics</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="locationFilter">
+                    <option value="">All Locations</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn" style="background: #fd7e14; border: none; color: white; font-weight: 600; padding: 10px 18px; border-radius: 8px; box-shadow: 0 4px 15px rgba(253, 126, 20, 0.3); transition: all 0.3s ease;">
+                <i class="fas fa-undo-alt" style="margin-right: 8px;"></i> Reset
+            </button>
+        </div>
+
+
+        <!-- Schedule Table -->
+        <div class="table-container">
+            <table class="orders-table" id="schedulesTable">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-user-md"></i>
+                                    <span>Physician</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-stethoscope"></i>
+                                    <span>Specialty</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>Degree</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Working Hours</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-hospital"></i>
+                                    <span>Assigned Clinic</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>Clinic Location</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-print"></i>
+                                    <span>Print Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="schedulesTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6c757d;"></i>
+                            <p style="margin-top: 10px; color: #6c757d;">Loading schedules...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- No Schedules Message -->
+        <div class="no-schedules" id="noSchedulesMessage" style="display: none; text-align: center; padding: 60px 20px; color: #6c757d;">
+            <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 20px; color: #dee2e6;"></i>
+            <h3 style="margin-bottom: 10px; color: #495057;">No Schedules Found</h3>
+            <p style="font-size: 1.1rem;">No physician schedules found for today. Please check back later or contact the administrator.</p>
+        </div>
+
+        <!-- Ticket Preview -->
+        <div id="ticketPreview" class="ticket-preview">
+            <div class="ticket-header">
+                <h2>MEDICAL TICKET</h2>
+                <p>Queue Management System</p>
+            </div>
+            <div class="ticket-content" id="ticketContent">
+                <!-- Ticket content will be populated here -->
+            </div>
+            <div class="ticket-footer">
+                <p>Generated on: <span id="ticketDate"></span></p>
+                <p>Thank you for using our services</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Type Selection Modal -->
+    <div id="ticketTypeModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="ticketTypeModalTitle"><i class="fas fa-ticket-alt"></i> Select Ticket Type</h2>
+                <span class="close" id="closeTicketTypeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Schedule Info -->
+                <div id="selectedScheduleInfo" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="margin: 0; color: #2c3e50;"><i class="fas fa-calendar"></i> <span id="scheduleInfo">Loading...</span></h4>
+                </div>
+
+                <!-- Ticket Type Selection -->
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h5 style="margin: 0 0 15px 0; color: #1976d2;"><i class="fas fa-ticket-alt"></i> Select Ticket Type</h5>
+                    <div style="margin-bottom: 15px;">
+                        <label for="ticketTypeSelect" style="display: block; margin-bottom: 8px; font-weight: 600;">Ticket Type:</label>
+                        <select id="ticketTypeSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;">
+                            <option value="Examination" selected="selected">Examination</option>
+                            <option value="Consultation">Consultation</option>
+                            <option value="Procedure">Procedure</option>
+                            <option value="Late">Late</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="patientCode" style="display: block; margin-bottom: 8px; font-weight: 600;">Patient Code (Optional):</label>
+                        <input type="text" id="patientCode" placeholder="Enter patient code (optional)..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="ticketNotes" style="display: block; margin-bottom: 8px; font-weight: 600;">Notes (Optional):</label>
+                        <textarea id="ticketNotes" placeholder="Additional notes for this ticket..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-height: 80px; resize: vertical;"></textarea>
+                    </div>
+                    <div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 0.9rem; color: #856404;">
+                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> A sequence number will be automatically assigned to this ticket.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelTicketBtn" style="background: #6c757d; border: none; color: white; font-weight: 600; padding: 10px 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3); transition: all 0.3s ease; margin-right: 10px;">
+                    <i class="fas fa-times" style="margin-right: 6px;"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="printTicketBtn" style="background: #6f42c1; border: none; color: white; font-weight: 600; padding: 10px 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3); transition: all 0.3s ease;">
+                    <i class="fas fa-print" style="margin-right: 6px;"></i> Print Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Schedule Statistics Modal -->
+    <div id="scheduleStatisticsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="scheduleStatisticsModalTitle"><i class="fas fa-chart-bar"></i> Schedule Statistics</h2>
+                <span class="close" id="closeScheduleStatisticsModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Schedule Info -->
+                <div id="scheduleInfoHeader" style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 id="scheduleName" style="margin: 0; color: #1976d2;">Loading...</h3>
+                    <p id="scheduleDetails" style="margin: 5px 0 0 0; color: #666;">Loading schedule details...</p>
+                </div>
+
+                <!-- Statistics Summary -->
+                <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div class="stat-item" style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #1976d2; margin-bottom: 8px;">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <h3 id="scheduleTotalTickets" style="margin: 0; color: #1976d2; font-size: 1.4rem;">0</h3>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Total Tickets</p>
+                    </div>
+                    <div class="stat-item" style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #28a745; margin-bottom: 8px;">
+                            <i class="fas fa-print"></i>
+                        </div>
+                        <h3 id="schedulePrintedTickets" style="margin: 0; color: #28a745; font-size: 1.4rem;">0</h3>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Printed</p>
+                    </div>
+                    <div class="stat-item" style="background: #fff3cd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #ffc107; margin-bottom: 8px;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 id="schedulePendingTickets" style="margin: 0; color: #ffc107; font-size: 1.4rem;">0</h3>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Pending</p>
+                    </div>
+                    <div class="stat-item" style="background: #f8d7da; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #dc3545; margin-bottom: 8px;">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <h3 id="scheduleCancelledTickets" style="margin: 0; color: #dc3545; font-size: 1.4rem;">0</h3>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Cancelled</p>
+                    </div>
+                </div>
+
+                <!-- Ticket Type Breakdown for this Schedule -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 15px 0; color: #2c3e50;"><i class="fas fa-list"></i> Ticket Types for This Schedule</h4>
+                    <div id="scheduleTicketTypeBreakdown" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Recent Tickets for this Schedule -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 15px 0; color: #2c3e50;"><i class="fas fa-history"></i> Recent Tickets for This Schedule</h4>
+                    <div id="scheduleRecentTickets" style="max-height: 250px; overflow-y: auto;">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="refreshScheduleStatisticsBtn" style="background: #6c757d; border: none; color: white; font-weight: 600; padding: 10px 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3); transition: all 0.3s ease; margin-right: 10px;">
+                    <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Refresh
+                </button>
+                <button class="btn btn-primary" id="closeScheduleStatisticsBtn" style="background: #6f42c1; border: none; color: white; font-weight: 600; padding: 10px 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3); transition: all 0.3s ease;">
+                    <i class="fas fa-times" style="margin-right: 6px;"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <style>
+        /* Enhanced button hover effects */
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Enhanced tooltip styles */
+        .btn[title] {
+            position: relative;
+        }
+        
+        .btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+            animation: tooltipFadeIn 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .btn[title]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -1px;
+            z-index: 1000;
+            animation: tooltipFadeIn 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        /* Disabled button tooltip */
+        .btn:disabled[title]:hover::after {
+            background: #dc3545 !important;
+        }
+        
+        .btn:disabled[title]:hover::before {
+            border-top-color: #dc3545 !important;
+        }
+        
+        /* Ensure tooltip works on all button states */
+        .btn.btn-secondary[title]:hover::after,
+        .btn.btn-secondary[title]:hover::before {
+            display: block;
+        }
+
+    </style>
+    
+    <script src="auth-check.js"></script>
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="utils/dom-utils.js"></script>
+    <script src="components/global-header.js"></script>
+    <script src="print-ticket.js"></script>
+</body>
+</html>

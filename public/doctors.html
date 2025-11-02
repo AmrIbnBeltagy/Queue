@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="auth-check.js"></script>
+    <script src="utils/dom-utils.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-user-md"></i> Doctor Management</h1>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search doctors...">
+                </div>
+                <a class="btn btn-secondary" href="today-physician-schedule.html">
+                    <i class="fas fa-arrow-left"></i> Back to Queue
+                </a>
+               
+                <button class="btn btn-primary" id="addDoctorBtn">
+                    <i class="fas fa-plus"></i> Add New Doctor
+                </button>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalDoctors">0</h3>
+                    <p>Total Doctors</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeDoctors">0</h3>
+                    <p>Active Doctors</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon disabled">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="disabledDoctors">0</h3>
+                    <p>Disabled Doctors</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filters-header">
+                <h3><i class="fas fa-filter"></i> Filter Doctors</h3>
+            </div>
+            <div class="filters-content">
+                <div class="filter-group">
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="specialityFilter">Speciality:</label>
+                    <select id="specialityFilter">
+                        <option value="">All Specialities</option>
+                        <!-- Specialities will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-secondary" id="clearFiltersBtn">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctors Table -->
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th data-sort="0">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-id-badge"></i>
+                                    <span>Code</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="1">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-user"></i>
+                                    <span>Name</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="2">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-stethoscope"></i>
+                                    <span>Speciality</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="3">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>Degree</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="4">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>Email</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="5">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-phone"></i>
+                                    <span>Phone</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="6">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Status</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th data-sort="7">
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Created</span>
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Disable Reason</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="doctorsTableBody">
+                    <!-- Doctors will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button class="btn btn-secondary" id="prevBtn">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="btn btn-secondary" id="nextBtn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Doctor Modal -->
+    <div id="addDoctorModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Add New Doctor</h2>
+                <span class="close" id="closeAddDoctorModal">&times;</span>
+            </div>
+            <form id="addDoctorForm">
+                <div class="modal-body">
+                    <!-- Personal Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-user"></i> Personal Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="doctorName"><i class="fas fa-user"></i> Full Name *</label>
+                            <input type="text" id="doctorName" name="name" required placeholder="e.g., Dr. Ahmed Hassan">
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="doctorCode"><i class="fas fa-id-badge"></i> Doctor Code *</label>
+                                <input type="text" id="doctorCode" name="code" required placeholder="e.g., DOC001" style="text-transform: uppercase;">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="doctorEmail"><i class="fas fa-envelope"></i> Email *</label>
+                                <input type="email" id="doctorEmail" name="email" required placeholder="doctor@example.com">
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="doctorPhone"><i class="fas fa-phone"></i> Phone *</label>
+                                <input type="tel" id="doctorPhone" name="phone" required placeholder="01012345678">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="licenseNumber"><i class="fas fa-certificate"></i> License Number</label>
+                                <input type="text" id="licenseNumber" name="licenseNumber" placeholder="Medical license number">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-stethoscope"></i> Medical Information</h3>
+                        
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="speciality"><i class="fas fa-stethoscope"></i> Speciality *</label>
+                                <select id="speciality" name="speciality" required>
+                                    <option value="">Select Speciality</option>
+                                    <!-- Specialities will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="degree"><i class="fas fa-graduation-cap"></i> Degree *</label>
+                                <select id="degree" name="degree" required>
+                                    <option value="">Select Degree</option>
+                                    <!-- Degrees will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Login Credentials -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-key"></i> Login Credentials</h3>
+                        
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="username"><i class="fas fa-user-circle"></i> Username *</label>
+                                <input type="text" id="username" name="username" required placeholder="e.g., dr.smith" style="text-transform: lowercase;">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="password"><i class="fas fa-lock"></i> Password *</label>
+                                <input type="password" id="password" name="password" required minlength="6" placeholder="Minimum 6 characters">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAddDoctorBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Doctor Modal -->
+    <div id="editDoctorModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit"></i> Edit Doctor</h2>
+                <span class="close" id="closeEditDoctorModal">&times;</span>
+            </div>
+            <form id="editDoctorForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editDoctorId" name="id">
+                    
+                    <!-- Personal Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-user"></i> Personal Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="editDoctorName"><i class="fas fa-user"></i> Full Name *</label>
+                            <input type="text" id="editDoctorName" name="name" required placeholder="e.g., Dr. Ahmed Hassan">
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="editDoctorCode"><i class="fas fa-id-badge"></i> Doctor Code *</label>
+                                <input type="text" id="editDoctorCode" name="code" required style="text-transform: uppercase;" placeholder="e.g., DOC001">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editDoctorEmail"><i class="fas fa-envelope"></i> Email *</label>
+                                <input type="email" id="editDoctorEmail" name="email" required placeholder="doctor@example.com">
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="editDoctorPhone"><i class="fas fa-phone"></i> Phone *</label>
+                                <input type="tel" id="editDoctorPhone" name="phone" required placeholder="01012345678">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editLicenseNumber"><i class="fas fa-certificate"></i> License Number</label>
+                                <input type="text" id="editLicenseNumber" name="licenseNumber" placeholder="Medical license number">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-stethoscope"></i> Medical Information</h3>
+                        
+                        <div class="detail-grid">
+                            <div class="form-group">
+                                <label for="editSpeciality"><i class="fas fa-stethoscope"></i> Speciality *</label>
+                                <select id="editSpeciality" name="speciality" required>
+                                    <option value="">Select Speciality</option>
+                                    <!-- Specialities will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editDegree"><i class="fas fa-graduation-cap"></i> Degree *</label>
+                                <select id="editDegree" name="degree" required>
+                                    <option value="">Select Degree</option>
+                                    <!-- Degrees will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelEditDoctorBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Disable Doctor Modal -->
+    <div id="disableDoctorModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: #dc3545;">
+                <h2><i class="fas fa-user-times"></i> Disable Doctor</h2>
+                <span class="close" id="closeDisableDoctorModal">&times;</span>
+            </div>
+            <form id="disableDoctorForm">
+                <div class="modal-body" style="text-align: center; padding: 40px 30px;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #fee; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <i class="fas fa-user-times" style="font-size: 2.5rem; color: #dc3545;"></i>
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px; font-size: 1.3rem;">Disable Doctor?</h3>
+                    <p style="color: #6c757d; margin-bottom: 20px; font-size: 1rem;">Please provide a reason for disabling this doctor.</p>
+                    
+                    <input type="hidden" id="disableDoctorId" name="id">
+                    
+                    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                        <label for="disableReason"><i class="fas fa-comment"></i> Reason for Disabling *</label>
+                        <textarea id="disableReason" name="reason" rows="4" required placeholder="Please provide a reason for disabling this doctor..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                        <label for="disabledBy"><i class="fas fa-user"></i> Disabled By *</label>
+                        <input type="text" id="disabledBy" name="disabledBy" required readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; text-align: left; margin-top: 20px;">
+                        <p style="color: #856404; margin: 0; font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> This action will disable the doctor account. The doctor data will be preserved but the account will be marked as disabled.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelDisableDoctorBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn" id="confirmDisableBtn" style="background: #dc3545; color: white;">
+                        <i class="fas fa-user-times"></i> Yes, Disable Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Enable Doctor Modal -->
+    <div id="enableDoctorModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: #28a745;">
+                <h2><i class="fas fa-user-check"></i> Enable Doctor</h2>
+                <span class="close" id="closeEnableDoctorModal">&times;</span>
+            </div>
+            <form id="enableDoctorForm">
+                <div class="modal-body" style="text-align: center; padding: 40px 30px;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #d4edda; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <i class="fas fa-user-check" style="font-size: 2.5rem; color: #28a745;"></i>
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px; font-size: 1.3rem;">Enable Doctor?</h3>
+                    <p style="color: #6c757d; margin-bottom: 20px; font-size: 1rem;">Are you sure you want to enable this doctor?</p>
+                    
+                    <input type="hidden" id="enableDoctorId" name="id">
+                    
+                    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                        <label for="enabledBy"><i class="fas fa-user"></i> Enabled By *</label>
+                        <input type="text" id="enabledBy" name="enabledBy" required readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+
+                    <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; border-radius: 6px; text-align: left; margin-top: 20px;">
+                        <p style="color: #0c5460; margin: 0; font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> This action will enable the doctor account. The doctor will be able to login and access the system.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelEnableDoctorBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn" id="confirmEnableBtn" style="background: #28a745; color: white;">
+                        <i class="fas fa-user-check"></i> Yes, Enable Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Doctor Details Modal -->
+    <div id="doctorDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-md"></i> Doctor Details</h2>
+                <span class="close" id="closeDoctorDetailsModal">&times;</span>
+            </div>
+            <div class="modal-body" id="doctorDetails">
+                <!-- Doctor details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="doctors.js"></script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Management - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content -->
+    <div class="container">
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-table"></i> Monitor Management</h1>
+                <p>Manage system monitors</p>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalMonitors">0</h3>
+                    <p>Total Monitors</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeMonitors">0</h3>
+                    <p>Active</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon disabled">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="disabledMonitors">0</h3>
+                    <p>Disabled</p>
+                </div>
+            </div>
+        
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="filter-group">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-container">
+            <button class="btn btn-primary" id="addMonitorBtn">
+                <i class="fas fa-plus"></i> Add New Monitor
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>Arabic Name</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>English Name</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-network-wired"></i>
+                                    <span>IP Address</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-toggle-on"></i>
+                                    <span>Status</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Created</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Disable Reason</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-hospital"></i>
+                                    <span>Assigned Clinic</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="monitorsTableBody">
+                    <!-- Monitors will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Add Monitor Modal -->
+    <div id="addMonitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-plus"></i> Add New Monitor</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addMonitorForm">
+                    <div class="form-group">
+                        <label for="monitorArName"><i class="fas fa-language"></i> Arabic Name *</label>
+                        <input type="text" id="monitorArName" name="arName" required placeholder="الاسم بالعربية">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monitorEnName"><i class="fas fa-language"></i> English Name *</label>
+                        <input type="text" id="monitorEnName" name="enName" required placeholder="English Name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monitorIP"><i class="fas fa-network-wired"></i> IP Address *</label>
+                        <input type="text" id="monitorIP" name="ip" required placeholder="192.168.1.100" pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" title="Please enter a valid IP address">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAddMonitor">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveMonitor">Save Monitor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Monitor Modal -->
+    <div id="editMonitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle"><i class="fas fa-edit"></i> Edit Monitor</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editMonitorForm">
+                    <div class="form-group">
+                        <label for="editMonitorArName"><i class="fas fa-language"></i> Arabic Name *</label>
+                        <input type="text" id="editMonitorArName" name="arName" required placeholder="الاسم بالعربية">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editMonitorEnName"><i class="fas fa-language"></i> English Name *</label>
+                        <input type="text" id="editMonitorEnName" name="enName" required placeholder="English Name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editMonitorIP"><i class="fas fa-network-wired"></i> IP Address *</label>
+                        <input type="text" id="editMonitorIP" name="ip" required placeholder="192.168.1.100" pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" title="Please enter a valid IP address">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEditMonitor">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateMonitor">Update Monitor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disable Monitor Modal -->
+    <div id="disableMonitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-ban"></i> Disable Monitor</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="disableMonitorForm">
+                    <div class="form-group">
+                        <label for="disabledBy"><i class="fas fa-user"></i> Disabled By *</label>
+                        <input type="text" id="disabledBy" name="disabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="disabledReason"><i class="fas fa-comment"></i> Reason for Disabling *</label>
+                        <textarea id="disabledReason" name="disabledReason" required placeholder="Enter reason for disabling this monitor..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDisableMonitor">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDisableMonitor">Disable Monitor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enable Monitor Modal -->
+    <div id="enableMonitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-check"></i> Enable Monitor</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="enableMonitorForm">
+                    <div class="form-group">
+                        <label for="enabledBy"><i class="fas fa-user"></i> Enabled By *</label>
+                        <input type="text" id="enabledBy" name="enabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEnableMonitor">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmEnableMonitor">Enable Monitor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitor Details Modal -->
+    <div id="monitorDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Monitor Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="monitorDetails">
+                    <!-- Monitor details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Clinic Modal -->
+    <div id="assignClinicModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-hospital"></i> Assign Clinic to Monitor</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="assignClinicForm">
+                    <div class="form-group">
+                        <label for="monitorInfo"><i class="fas fa-desktop"></i> Monitor</label>
+                        <input type="text" id="monitorInfo" readonly style="background-color: #f8f9fa; color: #6c757d;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="clinicSelection"><i class="fas fa-hospital"></i> Select Clinics *</label>
+                        <div class="clinic-selection-container">
+                            <div class="clinic-selection-header">
+                                <button type="button" class="btn btn-sm btn-secondary" id="selectAllClinics">Select All</button>
+                                <button type="button" class="btn btn-sm btn-secondary" id="clearAllClinics">Clear All</button>
+                                <span class="selection-count" id="selectionCount">0 selected</span>
+                            </div>
+                            <div class="clinic-table-container">
+                                <table class="clinic-selection-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="50px">
+                                                <input type="checkbox" id="selectAllCheckbox" title="Select All">
+                                            </th>
+                                            <th><i class="fas fa-hospital"></i> Clinic Name</th>
+                                            <th><i class="fas fa-language"></i> Arabic Name</th>
+                                            <th><i class="fas fa-map-marker-alt"></i> Location</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clinicTableBody">
+                                        <!-- Clinics will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="assignmentNotes"><i class="fas fa-comment"></i> Assignment Notes</label>
+                        <textarea id="assignmentNotes" name="notes" placeholder="Optional notes about this assignment..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAssignClinic">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAssignClinic">Assign Clinic</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="monitors.js"></script>
+</body>
+</html>

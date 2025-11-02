@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Configuration - Queue Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="config-page">
+        <div class="config-container">
+            <!-- Header -->
+            <header class="config-header">
+                <h1><i class="fas fa-cogs"></i> System Configuration</h1>
+                <p>Manage system settings and configurations</p>
+            </header>
+
+            <!-- Statistics Cards -->
+            <div class="config-stats">
+                <div class="config-stat-card">
+                    <div class="config-stat-icon primary">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="config-stat-number" id="totalConfigs">0</div>
+                    <div class="config-stat-label">Total Configurations</div>
+                </div>
+                <div class="config-stat-card">
+                    <div class="config-stat-icon success">
+                        <i class="fas fa-print"></i>
+                    </div>
+                    <div class="config-stat-number" id="printingConfigs">0</div>
+                    <div class="config-stat-label">Printing Settings</div>
+                </div>
+                <div class="config-stat-card">
+                    <div class="config-stat-icon info">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="config-stat-number" id="schedulingConfigs">0</div>
+                    <div class="config-stat-label">Scheduling Settings</div>
+                </div>
+                <div class="config-stat-card">
+                    <div class="config-stat-icon warning">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="config-stat-number" id="securityConfigs">0</div>
+                    <div class="config-stat-label">Security Settings</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="config-actions">
+                <button class="config-btn config-btn-primary" id="initializeDefaultsBtn">
+                    <i class="fas fa-download"></i> Initialize Defaults
+                </button>
+                <button class="config-btn config-btn-info" id="testApiBtn">
+                    <i class="fas fa-bug"></i> Test API
+                </button>
+            </div>
+
+            <!-- Configuration Sections -->
+            <div id="configurationContent">
+                <!-- Loading state -->
+                <div id="loadingState" class="config-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading configurations...</p>
+                </div>
+            </div>
+            
+            <!-- No configurations message -->
+            <div id="noConfigMessage" class="no-config-message" style="display: none;">
+                <div class="no-config-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3>No Configurations Found</h3>
+                <p>No system configurations have been set up yet.</p>
+                <button class="config-btn config-btn-primary" id="initializeDefaultsBtn">
+                    <i class="fas fa-download"></i> Initialize Default Configurations
+                </button>
+            </div>
+            
+            <!-- Professional Queue Configuration Button -->
+            <div class="config-actions" style="margin-top: 20px;">
+                <button class="config-btn config-btn-secondary" id="queueConfigBtn">
+                    <i class="fas fa-cogs"></i> Queue Management Settings
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="queue-config.js"></script>
+    <script src="configuration.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Counters - Queue Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-desktop"></i> Agent Counters</h1>
+                <p>Manage agent counters and their locations</p>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalCounters">0</h3>
+                    <p>Total Counters</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeCounters">0</h3>
+                    <p>Active Counters</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="inactiveCounters">0</h3>
+                    <p>Inactive Counters</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchFilter" placeholder="Search by counter number or description...">
+            </div>
+            <div class="filter-group">
+                <select id="locationFilter">
+                    <option value="">All Locations</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-container">
+            <button class="btn btn-primary" id="addCounterBtn">
+                <i class="fas fa-plus"></i> Add New Counter
+            </button>
+        </div>
+
+        <!-- Counters Table -->
+        <div class="table-container">
+            <table class="orders-table" id="countersTable">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-desktop"></i>
+                                    <span>Counter No</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>Location</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-comment"></i>
+                                    <span>Description</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-toggle-on"></i>
+                                    <span>Status</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Created At</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="countersTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Loading counters...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="noCountersMessage" class="no-data-message" style="display: none;">
+                <div class="no-data-content">
+                    <div class="no-data-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h3>No Agent Counters Found</h3>
+                    <p>No agent counters match your current filters. Try adjusting your search criteria or add a new counter.</p>
+                    <button class="btn btn-primary" id="addFirstCounterBtn">
+                        <i class="fas fa-plus"></i> Add First Counter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Counter Modal -->
+    <div id="counterModal" class="modal">
+        <div class="modal-content counter-modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <div class="modal-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="modal-title">
+                        <h2 id="counterModalTitle">Add New Counter</h2>
+                        <p id="counterModalSubtitle">Create a new agent counter for your queue management system</p>
+                    </div>
+                </div>
+                <span class="close" id="closeCounterModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="counterForm">
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h4>Counter Information</h4>
+                        </div>
+                        <div class="form-group">
+                            <label for="counterNo">
+                                <i class="fas fa-hashtag"></i>
+                                Counter Number *
+                            </label>
+                            <input type="text" id="counterNo" name="counterNo" required placeholder="Enter counter number (e.g., C001, C002)">
+                            <small class="form-help">
+                                <i class="fas fa-lightbulb"></i>
+                                Unique identifier for this counter
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Location *
+                            </label>
+                            <select id="location" name="location" required>
+                                <option value="">Select Location</option>
+                            </select>
+                            <small class="form-help">
+                                <i class="fas fa-lightbulb"></i>
+                                Choose the location where this counter is located
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-comment"></i>
+                            <h4>Additional Details</h4>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">
+                                <i class="fas fa-align-left"></i>
+                                Description
+                            </label>
+                            <textarea id="description" name="description" rows="3" placeholder="Optional description for this counter"></textarea>
+                            <small class="form-help">
+                                <i class="fas fa-lightbulb"></i>
+                                Additional information about this counter
+                            </small>
+                        </div>
+                        <div class="form-group" id="statusGroup" style="display: none;">
+                            <label for="isActive">
+                                <i class="fas fa-toggle-on"></i>
+                                Status
+                            </label>
+                            <select id="isActive" name="isActive">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCounterBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="saveCounterBtn">
+                    <i class="fas fa-save"></i> Save Counter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content delete-modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <div class="modal-icon danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="modal-title">
+                        <h2>Confirm Delete</h2>
+                        <p>This action cannot be undone</p>
+                    </div>
+                </div>
+                <span class="close" id="closeDeleteModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <div class="warning-icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <div class="warning-content">
+                        <h4>Delete Agent Counter</h4>
+                        <p>Are you sure you want to delete this counter? This will permanently remove it from the system.</p>
+                        <div class="warning-details">
+                            <i class="fas fa-info-circle"></i>
+                            <span>This action cannot be undone and may affect related queue operations.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Counter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="auth-check.js"></script>
+    <script src="utils/dom-utils.js"></script>
+    <script src="utils/loading-overlay.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="components/global-header.js"></script>
+    <script src="agent-counters.js"></script>
+</body>
+</html>

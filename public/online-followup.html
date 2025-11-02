@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>متابعة الطبيب - مستشفيات مبرة الصحافة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    html {
+      box-sizing: border-box;
+      font-size: 2.8vw;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    body, h1, h2, h3, h4, h5, h6, div, span, p, label, button, a {
+      font-weight: bold !important;
+    }
+    body {
+      font-family: 'Cairo', Arial, sans-serif;
+      background: #003467;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+      min-height: 100vh;
+      min-width: 100vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2vh 2vw;
+    }
+    .selection-panel {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2vh 3vw;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 2vh;
+      min-width: 300px;
+      max-width: 90vw;
+      width: 100%;
+      text-align: center;
+    }
+    .selection-panel h3 {
+      margin: 0 0 1.5vh 0;
+      color: #003467;
+      font-size: 1.8rem;
+    }
+    .selection-panel select {
+      width: 100%;
+      padding: 1.2vh 1.5vw;
+      font-size: 1.2rem;
+      border: 2px solid #003467;
+      border-radius: 0.8rem;
+      background: white;
+      color: #003467;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Cairo', Arial, sans-serif;
+    }
+    .selection-panel select:focus {
+      outline: none;
+      border-color: #ffb300;
+      box-shadow: 0 0 0 3px rgba(255, 179, 0, 0.2);
+    }
+    .card {
+      background: #0a2850;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 32px 0 #0006;
+      padding: 3vw 3vw 2vw 3vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 340px;
+      max-width: 98vw;
+      min-height: 60vh;
+    }
+    .card-header {
+      width: 100%;
+      background: #fff;
+      border-top-right-radius: 2.5rem;
+      border-top-left-radius: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2vh 0 1vh 0;
+      margin-bottom: 2vh;
+    }
+    .logo {
+      width: 22vw;
+      min-width: 140px;
+      max-width: 320px;
+      margin-bottom: 0;
+      display: block;
+    }
+    .clinic-number {
+      color: #ffb300;
+      font-size: 2.1rem;
+      font-weight: bold;
+      margin-bottom: 1.5vh;
+      letter-spacing: 1px;
+      text-align: center;
+      border: 3px solid #ffb300;
+      border-radius: 2.5rem;
+      background: transparent;
+      padding: 0.5em 2em;
+      display: inline-block;
+      box-shadow: 0 2px 8px 0 #ffe0a3a0;
+    }
+    .queue-number-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5vh;
+      justify-content: center;
+    }
+    .queue-number {
+      font-size: 20rem;
+      color: #ffb300;
+      font-weight: bolder;
+      line-height: 1;
+      display: block;
+      text-align: center;
+      border: 6px solid #ffb300;
+      border-radius: 3rem;
+      padding: 0.2em 0.5em;
+      box-shadow: 0 2px 12px 0 #b3e0ff80;
+      background: transparent;
+      margin: 0 auto;
+    }
+    .clinic-type {
+      color: #fff;
+      font-size: 3.4rem;
+      font-weight: bold;
+      margin-bottom: 2.2vh;
+      text-align: center;
+    }
+    .doctor-section {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.2vh;
+      gap: 1.2rem;
+    }
+    .doctor-name {
+      font-size: 3.4rem;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 0;
+      text-align: center;
+    }
+    .doctor-title {
+      color: #ffb300;
+      font-size: 2.1rem;
+      margin-bottom: 2.2vh;
+      text-align: center;
+    }
+    .clinic-times-label {
+      font-size: 2.1rem;
+      color: #fff;
+      margin-bottom: 1.2vh;
+      font-weight: bold;
+      text-align: center;
+    }
+    .clinic-times {
+      direction:ltr;
+      background: transparent;
+      color: #ffb300;
+      font-size: 3.2rem;
+      font-weight: bold;
+      border-radius: 2.5rem;
+      border: 3px solid #ffb300;
+      padding: 0.5em 2em;
+      display: inline-block;
+      margin-bottom: 1.2vh;
+      letter-spacing: 1px;
+      text-align: center;
+      box-shadow: 0 2px 8px 0 #b3e0ff80;
+    }
+    .status-badge {
+      background: #28a745;
+      color: white;
+      padding: 0.5em 1.5em;
+      border-radius: 2rem;
+      font-size: 1.8rem;
+      margin-bottom: 1.5vh;
+      display: inline-block;
+    }
+    .status-badge.waiting {
+      background: #ffc107;
+      color: #000;
+    }
+    .status-badge.in-progress {
+      background: #28a745;
+    }
+    @media (max-width: 600px) {
+      html { font-size: 4vw; }
+      .logo { width: 40vw; min-width: 90px; max-width: 180px; }
+      .queue-number { font-size: 3.5rem; }
+    }
+    @media (max-width: 400px) {
+      html { font-size: 5vw; }
+      .logo { width: 54vw; min-width: 60px; max-width: 120px; }
+      .queue-number { font-size: 2.2rem; }
+    }
+    @media (min-width: 1200px) {
+      html { font-size: 24px; }
+      .logo { width: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Physician Selection Panel -->
+  <div class="selection-panel" id="selectionPanel">
+    <h3><i class="fas fa-user-md"></i> اختيار الطبيب</h3>
+    <select id="physicianSelect">
+      <option value="">-- اختر الطبيب --</option>
+    </select>
+  </div>
+
+  <div class="card" id="displayCard" style="display: none;">
+    <div class="card-header">
+      <img class="logo" src="logo.png" alt="Logo" />
+    </div>
+    <div class="clinic-number" id="clinicName">--</div>
+    <div class="clinic-type" id="clinicType">--</div>
+    <div class="doctor-section">
+      <div class="doctor-name" id="doctorName">--</div>
+    </div>
+    <div class="doctor-title" id="doctorTitle">--</div>
+    <div class="clinic-times-label">مواعيد العيادة</div>
+    <div class="clinic-times" id="clinicTimes">--</div>
+    <div class="status-badge in-progress" id="statusBadge">جملية داخل العيادة</div>
+    <div class="queue-number-container">
+      <span class="queue-number" id="queueNumber">--</span>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="scripts/pages/online-followup.js"></script>
+</body>
+</html>
+

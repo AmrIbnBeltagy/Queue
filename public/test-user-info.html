@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test User Info - Queue Project</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { 
+            opacity: 0; 
+            padding-top: 80px;
+        }
+        body.authenticated { 
+            opacity: 1; 
+        }
+        .test-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .user-test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1><i class="fas fa-user-circle"></i> User Info Test Page</h1>
+        <p>This page tests the user information display in the global header.</p>
+        
+        <div class="user-test-section">
+            <h3><i class="fas fa-info-circle"></i> Current User Information</h3>
+            <p>Check the header above to see the current logged-in user.</p>
+            <button class="test-button" onclick="testUserInfo()">
+                <i class="fas fa-eye"></i> Show User Details
+            </button>
+            <button class="test-button" onclick="simulateUserChange()">
+                <i class="fas fa-user-edit"></i> Simulate User Change
+            </button>
+            <button class="test-button" onclick="clearUserData()">
+                <i class="fas fa-trash"></i> Clear User Data
+            </button>
+        </div>
+
+        <div class="user-test-section">
+            <h3><i class="fas fa-cog"></i> Test Instructions</h3>
+            <ol>
+                <li>Look at the header - you should see the current user's name</li>
+                <li>Click on the user info area in the header to see detailed information</li>
+                <li>Use the test buttons below to simulate different scenarios</li>
+                <li>The user info should update automatically when you change the data</li>
+            </ol>
+        </div>
+
+        <div class="user-test-section">
+            <h3><i class="fas fa-bug"></i> Debug Information</h3>
+            <div id="debugInfo">
+                <p><strong>localStorage currentUser:</strong> <span id="currentUserData">Loading...</span></p>
+                <p><strong>localStorage authToken:</strong> <span id="authTokenData">Loading...</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test functions
+        function testUserInfo() {
+            const userInfo = window.globalHeader ? window.globalHeader.getDetailedUserInfo() : 'Global header not loaded';
+            alert('User Info:\n' + JSON.stringify(userInfo, null, 2));
+        }
+
+        function simulateUserChange() {
+            const testUsers = [
+                { name: 'John Doe', email: 'john@example.com', role: 'Admin' },
+                { name: 'Jane Smith', email: 'jane@example.com', role: 'Manager' },
+                { name: 'Bob Wilson', email: 'bob@example.com', role: 'User' }
+            ];
+            
+            const randomUser = testUsers[Math.floor(Math.random() * testUsers.length)];
+            localStorage.setItem('currentUser', JSON.stringify(randomUser));
+            
+            // Trigger user info update
+            if (window.globalHeader) {
+                window.globalHeader.setupUserInfo();
+            }
+            
+            updateDebugInfo();
+            alert('User changed to: ' + randomUser.name);
+        }
+
+        function clearUserData() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('authToken');
+            
+            // Trigger user info update
+            if (window.globalHeader) {
+                window.globalHeader.setupUserInfo();
+            }
+            
+            updateDebugInfo();
+            alert('User data cleared');
+        }
+
+        function updateDebugInfo() {
+            const currentUser = localStorage.getItem('currentUser');
+            const authToken = localStorage.getItem('authToken');
+            
+            document.getElementById('currentUserData').textContent = currentUser || 'Not set';
+            document.getElementById('authTokenData').textContent = authToken ? 'Present' : 'Not set';
+        }
+
+        // Update debug info on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(updateDebugInfo, 1000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+

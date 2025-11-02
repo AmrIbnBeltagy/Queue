@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physician Schedule Management - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="utils/dom-utils.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-user-md"></i> Physician Schedule Management</h1>
+                <p>Manage physician schedules and working hours</p>
+            </div>
+        </header>
+
+        <!-- Schedule Summary Strip -->
+        <div class="schedule-summary">
+            <div class="summary-item">
+                <div class="summary-icon total"><i class="fas fa-calendar-alt"></i></div>
+                <div class="summary-metrics">
+                    <div class="summary-value" id="totalSchedules">0</div>
+                    <div class="summary-label">Total</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon active"><i class="fas fa-check-circle"></i></div>
+                <div class="summary-metrics">
+                    <div class="summary-value" id="activeSchedules">0</div>
+                    <div class="summary-label">Active</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon inactive"><i class="fas fa-times-circle"></i></div>
+                <div class="summary-metrics">
+                    <div class="summary-value" id="inactiveSchedules">0</div>
+                    <div class="summary-label">Inactive</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by physician name, clinic, or schedule name...">
+            </div>
+            <div class="filter-group">
+                <select id="physicianFilter">
+                    <option value="">All Physicians</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-container">
+            <button class="btn btn-primary" id="addScheduleBtn">
+                <i class="fas fa-plus"></i> Add New Schedule
+            </button>
+        </div>
+
+        <!-- Schedules Table -->
+        <div class="table-container">
+            <table class="orders-table" id="schedulesTable">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-user-md"></i>
+                                    <span>Physician</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar-week"></i>
+                                    <span>Working Days</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Start Date</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Time</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-toggle-on"></i>
+                                    <span>Status</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-pause"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="schedulesTableBody">
+                    <tr id="loadingRow">
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6c757d;"></i>
+                            <p style="margin-top: 10px; color: #6c757d;">Loading schedules...</p>
+                        </td>
+                    </tr>
+                    <tr id="noSchedulesRow" style="display: none;">
+                        <td colspan="6" style="text-align: center; padding: 30px 20px;">
+                            <div style="max-width: 680px; margin: 0 auto; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 40px 24px; color: #6c757d;">
+                                <i class="fas fa-calendar-times" style="font-size: 4rem; margin-bottom: 20px; color: #dee2e6;"></i>
+                                <h3 style="margin-bottom: 10px; color: #495057;">No Schedules Found</h3>
+                                <p style="font-size: 1.05rem; margin: 0;">No physician schedules found. Please adjust filters or add a new schedule.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- Pagination -->
+        <div class="pagination-container">
+            <div class="pagination-info">
+                <span id="paginationInfo">Showing 0 to 0 of 0 entries</span>
+            </div>
+            <div class="pagination-controls">
+                <button class="btn btn-outline pagination-btn" id="prevBtn" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span id="pageNumbers"></span>
+                <button class="btn btn-outline pagination-btn" id="nextBtn" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Schedule Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-user-md"></i> Add New Physician Schedule</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <form id="scheduleForm">
+                <div class="modal-body">
+                    <input type="hidden" id="scheduleId">
+                    
+                    <!-- Physician Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-user-md"></i> Physician Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="physicianSelect"><i class="fas fa-user-md"></i> Select Physician *</label>
+                            <select id="physicianSelect" name="physician" required>
+                                <option value="">Choose a physician...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Details -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-calendar-alt"></i> Schedule Details</h3>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-check"></i> Working Days *</label>
+                            <div class="working-days-table-container">
+                                <table class="working-days-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mon</th>
+                                            <th>Tue</th>
+                                            <th>Wed</th>
+                                            <th>Thu</th>
+                                            <th>Fri</th>
+                                            <th>Sat</th>
+                                            <th>Sun</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="monday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Monday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="tuesday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Tuesday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="wednesday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Wednesday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="thursday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Thursday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="friday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Friday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="saturday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Saturday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="day-cell-option">
+                                                    <input type="checkbox" name="days" value="sunday">
+                                                    <div class="day-cell-content">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <span>Sunday</span>
+                                                    </div>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="startDate"><i class="fas fa-calendar"></i> Start Date *</label>
+                            <input type="date" id="startDate" name="startDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Working Hours *</label>
+                            <div class="time-range-picker">
+                                <input type="time" id="startTime" name="startTime" class="time-picker-input" required>
+                                <span class="time-picker-separator">→</span>
+                                <input type="time" id="endTime" name="endTime" class="time-picker-input" required>
+                            </div>
+                            <small style="color: #6c757d; font-size: 0.8rem; display: block; margin-top: 4px;">Select working hours for the selected days</small>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="detail-section">
+                        <h3><i class="fas fa-sticky-note"></i> Additional Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="notes"><i class="fas fa-comment"></i> Notes</label>
+                            <textarea id="notes" name="notes" rows="3" placeholder="Additional notes about this schedule..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Schedule Modal -->
+    <div id="viewScheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-eye"></i> Schedule Details</h2>
+                <button class="close-btn" id="closeViewModal">&times;</button>
+            </div>
+            <div class="modal-body" id="viewScheduleContent">
+                <!-- Schedule details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeViewBtn">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteScheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Delete Schedule</h2>
+                <button class="close-btn" id="closeDeleteModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this schedule?</p>
+                <p><strong>This action cannot be undone.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="time-picker.js"></script>
+    <script src="physician-schedule.js"></script>
+</body>
+</html>

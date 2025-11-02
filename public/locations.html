@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Management - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content -->
+    <div class="container">
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-table"></i> Location Management</h1>
+                <p>Manage system locations</p>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalLocations">0</h3>
+                    <p>Total Locations</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeLocations">0</h3>
+                    <p>Active</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon disabled">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="disabledLocations">0</h3>
+                    <p>Disabled</p>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="filter-group">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-container">
+            <button class="btn btn-primary" id="addLocationBtn">
+                <i class="fas fa-plus"></i> Add New Location
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>Arabic Name</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-language"></i>
+                                    <span>English Name</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-toggle-on"></i>
+                                    <span>Status</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Created</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Disable Reason</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="header-cell">
+                                <div class="header-cell-content">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Actions</span>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="locationsTableBody">
+                    <!-- Locations will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Add Location Modal -->
+    <div id="addLocationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-plus"></i> Add New Location</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addLocationForm">
+                    <div class="form-group">
+                        <label for="locationArName"><i class="fas fa-language"></i> Arabic Name *</label>
+                        <input type="text" id="locationArName" name="arName" required placeholder="الاسم بالعربية">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="locationEnName"><i class="fas fa-language"></i> English Name *</label>
+                        <input type="text" id="locationEnName" name="enName" required placeholder="English Name">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAddLocation">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveLocation">Save Location</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Location Modal -->
+    <div id="editLocationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle"><i class="fas fa-edit"></i> Edit Location</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editLocationForm">
+                    <div class="form-group">
+                        <label for="editLocationArName"><i class="fas fa-language"></i> Arabic Name *</label>
+                        <input type="text" id="editLocationArName" name="arName" required placeholder="الاسم بالعربية">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editLocationEnName"><i class="fas fa-language"></i> English Name *</label>
+                        <input type="text" id="editLocationEnName" name="enName" required placeholder="English Name">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEditLocation">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateLocation">Update Location</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disable Location Modal -->
+    <div id="disableLocationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-ban"></i> Disable Location</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="disableLocationForm">
+                    <div class="form-group">
+                        <label for="disabledBy"><i class="fas fa-user"></i> Disabled By *</label>
+                        <input type="text" id="disabledBy" name="disabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="disabledReason"><i class="fas fa-comment"></i> Reason for Disabling *</label>
+                        <textarea id="disabledReason" name="disabledReason" required placeholder="Enter reason for disabling this location..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDisableLocation">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDisableLocation">Disable Location</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enable Location Modal -->
+    <div id="enableLocationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-check"></i> Enable Location</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="enableLocationForm">
+                    <div class="form-group">
+                        <label for="enabledBy"><i class="fas fa-user"></i> Enabled By *</label>
+                        <input type="text" id="enabledBy" name="enabledBy" required readonly style="background-color: #f8f9fa; color: #6c757d;" onkeydown="return false;" onpaste="return false;" oncontextmenu="return false;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEnableLocation">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmEnableLocation">Enable Location</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Details Modal -->
+    <div id="locationDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Location Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="locationDetails">
+                    <!-- Location details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="alert-system.js"></script>
+    <script src="locations.js"></script>
+</body>
+</html>

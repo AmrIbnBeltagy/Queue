@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Global Header - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth-check.js"></script>
+    <script src="components/global-header.js"></script>
+    <style>
+        body { opacity: 0; }
+        body.authenticated { opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="container">
+        <header class="page-header">
+            <div>
+                <h1><i class="fas fa-table"></i> Test Global Header</h1>
+                <p>This page tests the global header functionality</p>
+            </div>
+        </header>
+
+        <div class="content">
+            <h2>Global Header Test</h2>
+            <p>The navigation should be loaded automatically by the global header component.</p>
+            <p>Check the browser console for any errors.</p>
+        </div>
+    </div>
+
+    <script>
+        // Test that global header is working
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Global header test page loaded');
+            
+            // Check if navigation is present
+            const nav = document.querySelector('.main-nav');
+            if (nav) {
+                console.log('✅ Global header navigation found');
+            } else {
+                console.log('❌ Global header navigation not found');
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
