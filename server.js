@@ -11,7 +11,6 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(helmet());
 
 // Enable CORS with comprehensive options
 app.use(cors({
