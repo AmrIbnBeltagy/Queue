@@ -148,18 +148,73 @@ async function loadLocations() {
     }
 }
 
-// Populate specialty filter
+// Populate specialty filter - only show specialties with active schedules today
 function populateSpecialtyFilter() {
     const specialtyFilter = document.getElementById('specialtyFilter');
-    if (specialtyFilter && specialties.length > 0) {
-        specialtyFilter.innerHTML = '<option value="">All Specialties</option>';
-        specialties.forEach(specialty => {
+    if (!specialtyFilter) return;
+    
+    // Get specialties that have active schedules today
+    const specialtiesWithSchedules = getSpecialtiesWithActiveSchedules();
+    
+    specialtyFilter.innerHTML = '<option value="">All Specialties</option>';
+    
+    if (specialtiesWithSchedules.length > 0) {
+        specialtiesWithSchedules.forEach(specialty => {
             const option = document.createElement('option');
             option.value = specialty._id;
             option.textContent = specialty.enName || specialty.arName || specialty.name || 'Unknown Specialty';
             specialtyFilter.appendChild(option);
         });
     }
+}
+
+// Get specialties that have active schedules today
+function getSpecialtiesWithActiveSchedules() {
+    if (!todaySchedules || todaySchedules.length === 0) {
+        return [];
+    }
+    
+    // Get unique specialty IDs from active schedules
+    const specialtyIds = new Set();
+    
+    todaySchedules.forEach(schedule => {
+        if (schedule.isActive !== false) {
+            // Get specialty from physician data
+            let specialtyId = null;
+            
+            if (schedule.physician) {
+                const physician = typeof schedule.physician === 'object' && schedule.physician._id
+                    ? schedule.physician
+                    : physicians.find(p => p._id === schedule.physician || p._id === schedule.physicianId);
+                
+                if (physician && physician.speciality) {
+                    if (typeof physician.speciality === 'object' && physician.speciality._id) {
+                        specialtyId = physician.speciality._id;
+                    } else if (typeof physician.speciality === 'string') {
+                        specialtyId = physician.speciality;
+                    }
+                }
+            }
+            
+            if (specialtyId) {
+                specialtyIds.add(specialtyId);
+            }
+        }
+    });
+    
+    // Get specialty objects that have active schedules
+    const specialtiesWithActive = specialties.filter(specialty => 
+        specialtyIds.has(specialty._id)
+    );
+    
+    // Sort by name
+    specialtiesWithActive.sort((a, b) => {
+        const nameA = (a.enName || a.arName || a.name || '').toLowerCase();
+        const nameB = (b.enName || b.arName || b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+    
+    return specialtiesWithActive;
 }
 
 // Print configuration loading removed
@@ -201,6 +256,9 @@ async function loadTodaySchedules() {
             }
 
             filteredSchedules = [...todaySchedules];
+            
+            // Update specialty filter with only specialties that have active schedules today
+            populateSpecialtyFilter();
             
             // Load clinics and populate filters
             await loadClinics();
@@ -1003,7 +1061,7 @@ function setupEventListeners() {
                 // Fallback loading display
                 const tbody = document.getElementById('schedulesTableBody');
                 if (tbody) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
                 }
             }
             
@@ -1329,32 +1387,67 @@ async function populateClinicSelect() {
         const response = await fetch(`${ASSIGNMENTS_API}?active=true`);
         const result = await response.json();
         
-        // Build a set of clinics actively assigned TODAY to other schedules
+        // Helper function to check if two dates are the same day
         const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+        
+        // Helper function to get yesterday's date
+        const getYesterday = () => {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return yesterday;
+        };
+        
         const today = new Date();
+        const yesterday = getYesterday();
+        
+        // Build a set of clinics actively assigned TODAY or YESTERDAY to other schedules
         const activeTodayAssignments = new Map(); // clinicId -> array of assignments today
+        const activeYesterdayAssignments = new Map(); // clinicId -> array of assignments yesterday
+        
         if (result.success && Array.isArray(result.data)) {
             for (const a of result.data) {
                 const clinicId = a?.clinic?._id || a?.clinic;
+                if (!clinicId) continue;
+                
                 const assignedTs = a.assignedDate || a.assignmentDate || a.createdAt;
                 const assignedAt = assignedTs ? new Date(assignedTs) : null;
-                const isToday = assignedAt ? isSameDay(assignedAt, today) : false;
-                if (!clinicId) continue;
-                if (a.isActive && isToday) {
-                    const arr = activeTodayAssignments.get(clinicId) || [];
-                    arr.push(a);
-                    activeTodayAssignments.set(clinicId, arr);
+                
+                if (assignedAt) {
+                    const isToday = isSameDay(assignedAt, today);
+                    const isYesterday = isSameDay(assignedAt, yesterday);
+                    
+                    if (a.isActive) {
+                        if (isToday) {
+                            const arr = activeTodayAssignments.get(clinicId) || [];
+                            arr.push(a);
+                            activeTodayAssignments.set(clinicId, arr);
+                        } else if (isYesterday) {
+                            // Block clinics assigned yesterday
+                            const arr = activeYesterdayAssignments.get(clinicId) || [];
+                            arr.push(a);
+                            activeYesterdayAssignments.set(clinicId, arr);
+                        }
+                    }
                 }
             }
         }
 
-        // Filter out clinics that have an active assignment today for a different schedule
+        // Filter out clinics that have an active assignment today OR yesterday for a different schedule
         const availableClinics = clinics.filter(clinic => {
-            const blockedAssignments = activeTodayAssignments.get(clinic._id) || [];
-            if (blockedAssignments.length === 0) return true;
+            const blockedTodayAssignments = activeTodayAssignments.get(clinic._id) || [];
+            const blockedYesterdayAssignments = activeYesterdayAssignments.get(clinic._id) || [];
+            
+            // Block if clinic was assigned yesterday (regardless of schedule)
+            if (blockedYesterdayAssignments.length > 0) {
+                return false;
+            }
+            
+            // Check today's assignments
+            if (blockedTodayAssignments.length === 0) return true;
+            
             // Allow if any of today's assignments are for the currently selected schedule (editing case)
             if (selectedScheduleId) {
-                const assignedToCurrent = blockedAssignments.some(a => (a.physicianSchedule?._id || a.physicianSchedule) === selectedScheduleId);
+                const assignedToCurrent = blockedTodayAssignments.some(a => (a.physicianSchedule?._id || a.physicianSchedule) === selectedScheduleId);
                 if (assignedToCurrent) return true;
             }
             return false;

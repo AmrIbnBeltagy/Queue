@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physician Schedule Management - Admin Panel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    <script src="auth-check.js"></script>
-    <script src="utils/dom-utils.js"></script>
-    <script src="components/global-header.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../auth-check.js"></script>
+    <script src="../utils/dom-utils.js"></script>
+    <script src="../components/global-header.js"></script>
     <style>
         body { opacity: 0; }
         body.authenticated { opacity: 1; }
@@ -53,7 +53,7 @@
         <div class="filters-container">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search by physician name .....">
+                <input type="text" id="searchInput" placeholder="Search by physician name, clinic, or schedule name...">
             </div>
             <div class="filter-group">
                 <select id="physicianFilter">
@@ -372,9 +372,9 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="alert-system.js"></script>
-    <script src="time-picker.js"></script>
-    <script src="physician-schedule.js"></script>
+    <script src="../config.js"></script>
+    <script src="../alert-system.js"></script>
+    <script src="../time-picker.js"></script>
+    <script src="../scripts/pages/physician-schedule.js"></script>
 </body>
 </html>

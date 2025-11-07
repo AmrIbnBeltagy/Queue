@@ -29,7 +29,7 @@ const APP_PAGES = {
     DOCTORS: 'doctors.html',
     
     // Management
-    PHYSICIAN_SCHEDULE: 'physician-schedule.html'
+    PHYSICIAN_SCHEDULE: 'pages/physician-schedule.html'
 };
 
 // User Roles

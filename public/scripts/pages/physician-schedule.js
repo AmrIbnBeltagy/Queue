@@ -6,6 +6,7 @@ let schedules = [];
 let filteredSchedules = [];
 let physicians = [];
 let clinics = [];
+let degrees = [];
 let currentScheduleId = null;
 let scheduleToDelete = null;
 let currentPage = 1;
@@ -15,6 +16,7 @@ let itemsPerPage = 10;
 const SCHEDULES_API = `${API_BASE_URL}/physician-schedules`;
 const PHYSICIANS_API = `${API_BASE_URL}/doctors`;
 const CLINICS_API = `${API_BASE_URL}/clinics`;
+const DEGREES_API = `${API_BASE_URL}/degrees`;
 
 // Initialize
 DOMUtils.initializePage(async function() {
@@ -24,6 +26,7 @@ DOMUtils.initializePage(async function() {
     }
     
     await loadPhysicians();
+    await loadDegrees();
     loadSchedules();
     loadStatistics();
     setupEventListeners();
@@ -41,12 +44,26 @@ async function loadSchedules() {
             showLoading('Loading schedules...');
         }
         
-        const response = await fetch(SCHEDULES_API);
-        const result = await response.json();
+        // Try to load schedules with populated physician data
+        let response = await fetch(`${SCHEDULES_API}?populate=physician.degree,physician.speciality`);
+        let result = await response.json();
+        
+        // If populate doesn't work, try regular endpoint
+        if (!result.success || !result.data) {
+            response = await fetch(SCHEDULES_API);
+            result = await response.json();
+        }
         
         if (result.success) {
             schedules = result.data;
             filteredSchedules = [...schedules];
+            
+            // Ensure we have full physician data for all schedules
+            await enrichSchedulePhysicians();
+            
+            // Update physician filter dropdown with only physicians who have active schedules
+            populatePhysicianDropdowns();
+            
             displaySchedules();
             updatePagination();
         } else {
@@ -84,15 +101,108 @@ async function loadStatistics() {
 // Load physicians
 async function loadPhysicians() {
     try {
-        const response = await fetch(PHYSICIANS_API);
+        // Try to load with populated degree and speciality
+        const response = await fetch(`${PHYSICIANS_API}?populate=degree,speciality`);
         const result = await response.json();
         
         if (result.success) {
             physicians = result.data;
+            console.log('Loaded physicians with populated data:', physicians.length);
             populatePhysicianDropdowns();
+        } else {
+            // Fallback to regular endpoint
+            const fallbackResponse = await fetch(PHYSICIANS_API);
+            const fallbackResult = await fallbackResponse.json();
+            if (fallbackResult.success) {
+                physicians = fallbackResult.data;
+                populatePhysicianDropdowns();
+            }
         }
     } catch (error) {
         console.error('Error loading physicians:', error);
+        // Try fallback
+        try {
+            const fallbackResponse = await fetch(PHYSICIANS_API);
+            const fallbackResult = await fallbackResponse.json();
+            if (fallbackResult.success) {
+                physicians = fallbackResult.data;
+                populatePhysicianDropdowns();
+            }
+        } catch (fallbackError) {
+            console.error('Error loading physicians (fallback):', fallbackError);
+        }
+    }
+}
+
+// Get physician by ID with full data
+async function getPhysicianById(physicianId) {
+    try {
+        // First check if we already have it in physicians array
+        let physician = physicians.find(p => p._id === physicianId);
+        if (physician && physician.degree && typeof physician.degree === 'object') {
+            return physician; // Already has populated degree
+        }
+        
+        // Fetch from API with populate
+        const response = await fetch(`${PHYSICIANS_API}/${physicianId}?populate=degree,speciality`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            // Update in physicians array
+            const index = physicians.findIndex(p => p._id === physicianId);
+            if (index !== -1) {
+                physicians[index] = result.data;
+            } else {
+                physicians.push(result.data);
+            }
+            return result.data;
+        }
+        
+        return physician; // Return what we have
+    } catch (error) {
+        console.error('Error fetching physician:', error);
+        return physicians.find(p => p._id === physicianId);
+    }
+}
+
+// Load degrees
+async function loadDegrees() {
+    try {
+        const response = await fetch(DEGREES_API);
+        const result = await response.json();
+        
+        if (result.success) {
+            degrees = result.data || [];
+            console.log('Loaded degrees:', degrees.length);
+        } else {
+            console.warn('Failed to load degrees:', result.message);
+        }
+    } catch (error) {
+        console.error('Error loading degrees:', error);
+        degrees = [];
+    }
+}
+
+// Enrich schedule physicians with full data
+async function enrichSchedulePhysicians() {
+    const physicianIds = new Set();
+    
+    // Collect all unique physician IDs
+    schedules.forEach(schedule => {
+        const physicianId = typeof schedule.physician === 'object' && schedule.physician._id 
+            ? schedule.physician._id 
+            : schedule.physician;
+        if (physicianId) {
+            physicianIds.add(physicianId);
+        }
+    });
+    
+    // Fetch missing physicians
+    for (const physicianId of physicianIds) {
+        const existingPhysician = physicians.find(p => p._id === physicianId);
+        if (!existingPhysician || !existingPhysician.degree || typeof existingPhysician.degree !== 'object') {
+            await getPhysicianById(physicianId);
+        }
     }
 }
 
@@ -101,6 +211,9 @@ async function loadPhysicians() {
 function populatePhysicianDropdowns() {
     const physicianSelect = document.getElementById('physicianSelect');
     const physicianFilter = document.getElementById('physicianFilter');
+    
+    // Get physicians with active schedules only
+    const physiciansWithActiveSchedules = getPhysiciansWithActiveSchedules();
     
     if (physicianSelect) {
         physicianSelect.innerHTML = '<option value="">Choose a physician...</option>';
@@ -114,13 +227,41 @@ function populatePhysicianDropdowns() {
     
     if (physicianFilter) {
         physicianFilter.innerHTML = '<option value="">All Physicians</option>';
-        physicians.forEach(physician => {
+        // Only show physicians with active schedules in the filter
+        physiciansWithActiveSchedules.forEach(physician => {
             const option = document.createElement('option');
             option.value = physician._id;
             option.textContent = physician.name;
             physicianFilter.appendChild(option);
         });
     }
+}
+
+// Get physicians who have active schedules
+function getPhysiciansWithActiveSchedules() {
+    if (!schedules || schedules.length === 0) {
+        return [];
+    }
+    
+    // Get unique physician IDs from active schedules
+    const activePhysicianIds = new Set();
+    schedules.forEach(schedule => {
+        if (schedule.isActive !== false) {
+            const physicianId = typeof schedule.physician === 'object' && schedule.physician._id 
+                ? schedule.physician._id 
+                : schedule.physician;
+            if (physicianId) {
+                activePhysicianIds.add(physicianId);
+            }
+        }
+    });
+    
+    // Get physician objects that have active schedules
+    const physiciansWithActive = physicians.filter(physician => 
+        activePhysicianIds.has(physician._id)
+    );
+    
+    return physiciansWithActive;
 }
 
 
@@ -156,12 +297,63 @@ function displaySchedules() {
             console.log('Using populated physician:', physician);
         } else {
             // Physician is just an ID, find it in the physicians array
-            physician = physicians.find(p => p._id === schedule.physician);
-            console.log('Schedule physician ID:', schedule.physician);
+            const physicianId = schedule.physician;
+            physician = physicians.find(p => p._id === physicianId);
+            console.log('Schedule physician ID:', physicianId);
             console.log('Available physicians:', physicians.length);
             console.log('Found physician:', physician);
         }
         const clinic = clinics.find(c => c._id === schedule.clinic);
+        
+        // Resolve degree name with better logic
+        let degreeName = 'N/A';
+        if (physician) {
+            // Try multiple ways to get degree
+            if (physician.degree) {
+                if (typeof physician.degree === 'object' && physician.degree !== null) {
+                    // Degree is populated object
+                    degreeName = physician.degree.enName || physician.degree.arName || physician.degree.name || physician.degree.label || 'N/A';
+                } else if (typeof physician.degree === 'string') {
+                    // Check if it's an ID (24 char hex) or a name
+                    if (/^[0-9a-fA-F]{24}$/.test(physician.degree)) {
+                        // It's an ID, find in degrees array
+                        const degreeObj = degrees.find(d => d._id === physician.degree);
+                        if (degreeObj) {
+                            degreeName = degreeObj.enName || degreeObj.arName || degreeObj.name || degreeObj.label || 'N/A';
+                        } else {
+                            // Degree not found in array, try to fetch it
+                            console.log('Degree ID not found in loaded degrees, ID:', physician.degree);
+                        }
+                    } else {
+                        // It's a name string (not an ID)
+                        degreeName = physician.degree;
+                    }
+                }
+            } else if (physician.degreeName) {
+                degreeName = physician.degreeName;
+            } else if (physician.degreeId) {
+                // Try to find by degreeId
+                const degreeObj = degrees.find(d => d._id === physician.degreeId);
+                if (degreeObj) {
+                    degreeName = degreeObj.enName || degreeObj.arName || degreeObj.name || degreeObj.label || 'N/A';
+                }
+            }
+            
+            // Debug: log what we found
+            if (degreeName === 'N/A') {
+                console.log('Degree not found for physician:', {
+                    name: physician.name,
+                    physicianId: physician._id,
+                    degree: physician.degree,
+                    degreeName: physician.degreeName,
+                    degreeId: physician.degreeId,
+                    physicianData: physician
+                });
+            }
+        } else {
+            console.log('Physician not found for schedule:', schedule._id);
+        }
+        
         // Show only selected days
         const days = schedule.days && schedule.days.length > 0 ? 
             schedule.days.map(day => 
@@ -170,6 +362,7 @@ function displaySchedules() {
             '<span class="day-chip no-days">No days selected</span>';
         const statusClass = schedule.isActive ? 'status-active' : 'status-inactive';
         const statusText = schedule.isActive ? 'Active' : 'Inactive';
+        const statusIcon = schedule.isActive ? 'fa-check-circle' : 'fa-times-circle';
         
         return `
             <tr class="data-row">
@@ -182,6 +375,12 @@ function displaySchedules() {
                             <strong>${physician ? physician.name : 'Unknown'}</strong>
                             <small>${physician ? (physician.speciality ? (physician.speciality.arName || physician.speciality.enName || 'Unknown Speciality') : 'No Speciality') : ''}</small>
                         </div>
+                    </div>
+                </td>
+                <td>
+                    <div style="color: #6c757d; font-weight: 500;">
+                        <i class="fas fa-graduation-cap" style="margin-right: 6px; color: #1976d2;"></i>
+                        <span>${degreeName}</span>
                     </div>
                 </td>
                 <td class="working-days-cell">
@@ -200,7 +399,10 @@ function displaySchedules() {
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
+                    <span class="status-badge ${statusClass}">
+                        <i class="fas ${statusIcon}"></i>
+                        <span>${statusText}</span>
+                    </span>
                 </td>
                 <td>
                     <div class="action-buttons">
@@ -743,7 +945,11 @@ function viewSchedule(scheduleId) {
                 <strong>Time:</strong> ${formatTimeTo12Hour(schedule.startTime)} - ${formatTimeTo12Hour(schedule.endTime)}
             </div>
             <div class="detail-row">
-                <strong>Status:</strong> <span class="status-badge ${schedule.isActive ? 'status-active' : 'status-inactive'}">${schedule.isActive ? 'Active' : 'Inactive'}</span>
+                <strong>Status:</strong> 
+                <span class="status-badge ${schedule.isActive ? 'status-active' : 'status-inactive'}">
+                    <i class="fas ${schedule.isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                    <span>${schedule.isActive ? 'Active' : 'Inactive'}</span>
+                </span>
             </div>
             ${schedule.notes ? `<div class="detail-row"><strong>Notes:</strong> ${schedule.notes}</div>` : ''}
         </div>

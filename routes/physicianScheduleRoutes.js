@@ -70,11 +70,17 @@ router.get('/', async (req, res) => {
     const schedules = await PhysicianSchedule.find(filter)
       .populate({
         path: 'physician',
-        select: 'name speciality email phone',
-        populate: {
-          path: 'speciality',
-          select: 'arName enName'
-        }
+        select: 'name speciality email phone degree',
+        populate: [
+          {
+            path: 'speciality',
+            select: 'arName enName'
+          },
+          {
+            path: 'degree',
+            select: 'arName enName'
+          }
+        ]
       })
       .populate('createdBy', 'name username')
       .populate('updatedBy', 'name username')
@@ -218,7 +224,20 @@ router.get('/today', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const schedule = await PhysicianSchedule.findById(req.params.id)
-      .populate('physician', 'name speciality email phone')
+      .populate({
+        path: 'physician',
+        select: 'name speciality email phone degree',
+        populate: [
+          {
+            path: 'speciality',
+            select: 'arName enName'
+          },
+          {
+            path: 'degree',
+            select: 'arName enName'
+          }
+        ]
+      })
       .populate('createdBy', 'name username')
       .populate('updatedBy', 'name username');
 

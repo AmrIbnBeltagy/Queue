@@ -25,20 +25,79 @@ class GlobalHeader {
     // Load the header HTML
     async loadHeader() {
         try {
-            const response = await fetch('components/global-header.html');
+            // Determine the correct path based on current location
+            const currentPath = window.location.pathname;
+            const basePath = currentPath.includes('/pages/') ? '../components/global-header.html' : 'components/global-header.html';
+            const response = await fetch(basePath);
             const headerHTML = await response.text();
             
             // Insert header at the beginning of body
             document.body.insertAdjacentHTML('afterbegin', headerHTML);
             
-            // Setup user info after header is loaded
+            // Fix relative paths in navigation links based on current location
+            // Use setTimeout to ensure DOM is updated
             setTimeout(() => {
-                this.setupUserInfo();
-                this.setupLogout();
-            }, 100);
+                this.fixNavigationPaths();
+            }, 50);
+            
+            // Setup user info after header is loaded with retry mechanism
+            this.setupUserInfoWithRetry();
+            this.setupLogout();
         } catch (error) {
             console.error('Error loading global header:', error);
         }
+    }
+
+    // Fix navigation paths based on current page location
+    fixNavigationPaths() {
+        const currentPath = window.location.pathname;
+        const isInPagesFolder = currentPath.includes('/pages/');
+        
+        // Get all navigation links
+        const navLinks = document.querySelectorAll('.dropdown-menu a');
+        
+        // Pages that are in the pages folder
+        const pagesFolderFiles = ['physician-schedule.html'];
+        
+        navLinks.forEach(link => {
+            let href = link.getAttribute('href');
+            if (!href) return;
+            
+            // Skip external links and absolute paths
+            if (href.startsWith('http') || href.startsWith('/') || href.startsWith('#')) {
+                return;
+            }
+            
+            // Clean up any existing pages/ prefix to avoid duplication
+            if (href.startsWith('pages/')) {
+                href = href.replace('pages/', '');
+            }
+            
+            // Extract filename from href (after cleaning)
+            const filename = href.split('/').pop();
+            
+            // If it's a file from pages folder
+            if (pagesFolderFiles.includes(filename)) {
+                if (isInPagesFolder) {
+                    // Already in pages folder, use relative path (just filename)
+                    link.setAttribute('href', filename);
+                } else {
+                    // In root folder, use pages/ prefix
+                    link.setAttribute('href', `pages/${filename}`);
+                }
+            } else {
+                // Regular file - if in pages folder, need to go up one level
+                if (isInPagesFolder) {
+                    // Remove any existing ../
+                    href = href.replace(/^\.\.\//, '');
+                    link.setAttribute('href', `../${href}`);
+                } else {
+                    // In root folder, ensure no ../
+                    href = href.replace(/^\.\.\//, '');
+                    link.setAttribute('href', href);
+                }
+            }
+        });
     }
 
     // Ensure a favicon exists to avoid 404s
@@ -99,35 +158,44 @@ class GlobalHeader {
         });
     }
 
+    // Setup user info display with retry mechanism
+    setupUserInfoWithRetry(retries = 5, delay = 200) {
+        const attempt = () => {
+            const userInfo = document.getElementById('userInfo');
+            const userName = document.getElementById('userName');
+            
+            if (userInfo && userName) {
+                // Load user info from localStorage or API
+                const currentUser = this.getCurrentUser();
+                userName.textContent = currentUser;
+                
+                // Add click handler for user info dropdown (optional)
+                userInfo.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showUserDropdown();
+                });
+                
+                // Update user info periodically
+                setInterval(() => {
+                    const updatedUser = this.getCurrentUser();
+                    if (userName && userName.textContent !== updatedUser) {
+                        userName.textContent = updatedUser;
+                    }
+                }, 5000); // Check every 5 seconds
+            } else if (retries > 0) {
+                // Retry if elements not found
+                setTimeout(() => this.setupUserInfoWithRetry(retries - 1, delay), delay);
+            } else {
+                console.warn('User info elements not found after retries. Header may not be fully loaded.');
+            }
+        };
+        
+        attempt();
+    }
+
     // Setup user info display
     setupUserInfo() {
-        const userInfo = document.getElementById('userInfo');
-        const userName = document.getElementById('userName');
-        
-        console.log('Setting up user info...', { userInfo, userName });
-        
-        if (userInfo && userName) {
-            // Load user info from localStorage or API
-            const currentUser = this.getCurrentUser();
-            console.log('Current user:', currentUser);
-            userName.textContent = currentUser;
-            
-            // Add click handler for user info dropdown (optional)
-            userInfo.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showUserDropdown();
-            });
-            
-            // Update user info periodically
-            setInterval(() => {
-                const updatedUser = this.getCurrentUser();
-                if (userName.textContent !== updatedUser) {
-                    userName.textContent = updatedUser;
-                }
-            }, 5000); // Check every 5 seconds
-        } else {
-            console.error('User info elements not found:', { userInfo, userName });
-        }
+        this.setupUserInfoWithRetry();
     }
 
     // Get current user info
@@ -249,7 +317,11 @@ class GlobalHeader {
             // Set active menu item
             const menuLinks = document.querySelectorAll('.dropdown-menu a');
             menuLinks.forEach(link => {
-                if (link.getAttribute('href') === pageConfig.item) {
+                const linkHref = link.getAttribute('href');
+                // Compare by filename to handle relative paths correctly
+                const linkFile = linkHref ? linkHref.split('/').pop() : '';
+                const configFile = pageConfig.item.split('/').pop();
+                if (linkFile === configFile) {
                     link.classList.add('active');
                 }
             });
