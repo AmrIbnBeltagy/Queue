@@ -8,7 +8,7 @@ const API_BASE_URL = (() => {
     }
     
     // Production URL
-    return 'https://shippingproject-1o44.onrender.com/api';
+    return 'http://10.30.10.29:3000/api';
 })();
 
 // App Pages Configuration
